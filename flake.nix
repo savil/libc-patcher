@@ -4,8 +4,8 @@
   outputs = { self }:
     let
       libcPatcher =
-        # nixpkgs instance whose stdenv is used
-        pkgs:
+        # nixpkgs instance from whose stdenv we get libc
+        stdenv-nixpkgs:
 
         # name of the nix package that is derived
         name:
@@ -13,7 +13,7 @@
         # the package being patched
         wrapped-package:
 
-        pkgs.runCommand name {}
+        stdenv-nixpkgs.runCommand name {}
         ''
            # bash commands
             # Whitelist of library files from ls -al /path/to/libc/lib, as of glibc-2.35:
@@ -63,7 +63,7 @@
                     # We'll undo the write permission at the end of this script, but this is not great b/c an error
                     # in one of the commands below leaves the write permission in place.
                     chmod -R 777 $file
-                    patchelf  --set-rpath ${pkgs.stdenv.cc.libc_lib.outPath}/lib:$(patchelf --print-rpath $file) --interpreter ${pkgs.stdenv.cc.libc_lib.outPath}/lib/ld-linux-x86-64.so.2 $file
+                    patchelf  --set-rpath ${stdenv-nixpkgs.stdenv.cc.libc_lib.outPath}/lib:$(patchelf --print-rpath $file) --interpreter ${stdenv-nixpkgs.stdenv.cc.libc_lib.outPath}/lib/ld-linux-x86-64.so.2 $file
                     for libc_so_lib in "''${libc_so_libs[@]}"; do
                             patchelf --add-needed $libc_so_lib $file
                     done
